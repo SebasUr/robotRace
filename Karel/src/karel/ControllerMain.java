@@ -1,5 +1,8 @@
 package karel;
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
+
 import kareltherobot.*;
 
 /**
@@ -73,7 +76,113 @@ public class ControllerMain implements Directions
         }
         TrafficController.get().registerSubroute(s3);
 
+        // RUTA ALTERNA AZUL ----------------------------------------------------------
+        //  al llegar a 1,11, evaluar 1,12..1,15
+        List<int[]> alt = new ArrayList<>();
+        // ruta alternativa (usa la tuya)
+        for (int a = 2; a <= 11; a++) {
+            alt.add(new int[]{a,11});
+        }
 
+        alt.add(new int[]{11,10});
+        alt.add(new int[]{11,9});
+
+        for (int a =11; a <= 13 ;a++){
+            alt.add(new int[]{a,8});
+        }
+
+        for (int a = 8; a <= 16; a++) {
+            alt.add(new int[]{14,a});
+        }
+
+        alt.add(new int[]{13,16});
+        alt.add(new int[]{12,16});
+        alt.add(new int[]{11,16});
+        alt.add(new int[]{10,16});
+        alt.add(new int[]{10,15});
+        alt.add(new int[]{10,14});
+
+        for (int a = 10; a >= 5; a--) {
+            alt.add(new int[]{a,13});
+        }
+
+        for (int a = 14; a <= 20; a++) {
+            alt.add(new int[]{5,a});
+        }
+        
+        for (int a = 6; a <= 10; a++) {
+            alt.add(new int[]{a,20});
+        }
+            
+        for (int a = 21; a <= 30; a++) {
+            alt.add(new int[]{10,a});
+        }
+        alt.add(new int[]{10,30});
+        alt.add(new int[]{11,30});
+        alt.add(new int[]{12,30});
+        alt.add(new int[]{13,30});
+        alt.add(new int[]{14,30});
+        alt.add(new int[]{15,30});
+
+
+        // triggers: las cuatro celdas a comprobar (1,12..1,15)
+        List<int[]> triggers = new ArrayList<>();
+        triggers.add(new int[]{1,12});
+        triggers.add(new int[]{1,13});
+        triggers.add(new int[]{1,14});
+        triggers.add(new int[]{1,15});
+
+        // requiredOccupied = 4 -> sólo cambiar si las 4 están ocupadas en el instante
+        TrafficController.AlternateRouteSpec spec = new TrafficController.AlternateRouteSpec(alt, 15, 30, triggers, 4);
+        TrafficController.get().registerAlternateRoute(1, 11, spec);
+        // FIN RUTA ALTERNATIVA VERDE. ----------------------------------------------------------------------------
+
+        // ----------------------------------------------------------------------------------------------------------------------------------|
+        // # RUTA ALTERNATIVA MORADA. ------------------------------------------------------------------------------|
+        List<int[]> alt2 = new ArrayList<>();
+        alt2.add(new int[]{11,22});
+        alt2.add(new int[]{11,21});
+        
+        for (int a=11;a<=19; a++){
+            alt2.add(new int[]{a,20});
+        }
+
+        alt2.add(new int[]{19,19});
+
+        for (int a=19;a>=15; a--){
+            alt2.add(new int[]{a,18});
+        }
+
+        for (int a=17;a>=1; a--){
+            alt2.add(new int[]{15,a});
+        }
+
+        for (int a=14;a<=10; a--){
+            alt2.add(new int[]{a,1});
+        }
+
+        for (int a=2;a<=10; a++){
+            alt2.add(new int[]{10,a});
+        }
+
+        for (int a=9;a>=2; a--){
+            alt2.add(new int[]{a,10});
+        }
+
+        List<int[]> triggers2 = new ArrayList<>();
+        triggers2.add(new int[]{10,24});
+        triggers2.add(new int[]{10,25});
+        triggers2.add(new int[]{10,26});
+        triggers2.add(new int[]{10,27});
+        triggers2.add(new int[]{10,28});
+        triggers2.add(new int[]{10,29});
+
+
+        // requiredOccupied = 4 -> sólo cambiar si las 4 están ocupadas en el instante
+        TrafficController.AlternateRouteSpec spec2 = new TrafficController.AlternateRouteSpec(alt2,2, 10, triggers2, 6);
+        TrafficController.get().registerAlternateRoute(11, 23, spec2);
+    // ----------------------------------------------------------------------------------------------------------------------
+    
         int totalAvenues = 7; // columnas
         int totalStreets = 4; // filas
         int count = totalAvenues * totalStreets; // 28 robots
@@ -88,6 +197,27 @@ public class ControllerMain implements Directions
                 RacerBot bot = new RacerBot(streetx, avenuex, Directions.East, Directions.infinity, c);
 
                 // Crear y lanzar el hilo
+                Thread t = new Thread(bot, "Racer-" + robotNumber);
+                t.start();
+
+                robotNumber++;
+            }
+        }
+
+        int startAvenue = 23; 
+        int endAvenue   = 30; 
+        int[] streetsLineaRoja = {13, 14, 15}; // filas (streets) de la línea roja
+
+        for (int streetx : streetsLineaRoja) {
+            for (int avenuex = startAvenue; avenuex <= endAvenue; avenuex++) {
+                // Color distinto para estos robots también
+                Color c = new Color((50 * robotNumber) % 256,
+                                    (80 * robotNumber) % 256,
+                                    (120 * robotNumber) % 256);
+
+                RacerBot bot = new RacerBot(streetx, avenuex, Directions.East,
+                                            Directions.infinity, c);
+
                 Thread t = new Thread(bot, "Racer-" + robotNumber);
                 t.start();
 

@@ -1,0 +1,70 @@
+    for (int a = 2; a <= 11; a++) {
+        alt.add(new int[]{a,11});
+    }
+
+    alt.add(new int[]{11,10});
+    alt.add(new int[]{11,9});
+
+    for (int a =11; a <= 13 ;a++){
+        alt.add(new int[]{a,8});
+    }
+
+    for (int a = 8; a <= 16; a++) {
+        alt.add(new int[]{14,a});
+    }
+
+    alt.add(new int[]{13,16});
+    alt.add(new int[]{12,16});
+    alt.add(new int[]{11,16});
+    alt.add(new int[]{10,16});
+    alt.add(new int[]{10,15});
+    alt.add(new int[]{10,14});
+
+    for (int a = 10; a >= 5; a--) {
+        alt.add(new int[]{a,13});
+    }
+
+    for (int a = 14; a <= 20; a++) {
+        alt.add(new int[]{5,a});
+    }
+    
+    for (int a = 6; a <= 10; a++) {
+        alt.add(new int[]{a,20});
+    }
+
+    for (int a = 21; a <= 29; a++) {
+        alt.add(new int[]{10,a});
+    }
+
+
+
+Ruta Alternativa MORADA
+
+    alt2.add(new int[]{11,22});
+    alt2.add(new int[]{11,21});
+    
+    for (int a=11;a<=19; a++){
+        alt2.add(new int[]{a,20});
+    }
+
+    alt2.add(new int[]{19,19});
+
+    for (int a=19;a>=15; a--){
+        alt2.add(new int[]{a,18});
+    }
+
+    for (int a=17;a>=1; a--){
+        alt2.add(new int[]{15,a});
+    }
+
+    for (int a=14;a<=10; a--){
+        alt2.add(new int[]{a,1});
+    }
+
+    for (int a=2;a<=10; a++){
+        alt2.add(new int[]{10,a});
+    }
+
+    for (int a=9;a>=2; a--){
+        alt2.add(new int[]{a,10});
+    }
