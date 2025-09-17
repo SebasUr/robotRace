@@ -203,14 +203,51 @@ public class RacerBot extends Robot implements Runnable, Directions {
     private void safeMoveForward() {
         int ns = nextStreet();
         int na = nextAvenue();
-        while (!TrafficController.get().tryMove(street, avenue, ns, na, id)) {
-            // Espera corta para no ocupar CPU
+
+        TrafficController tc = TrafficController.get();
+
+        // Subruta que contiene la celda destino (si hay)
+        Subroute entering = tc.findContainingSubroute(ns, na);
+
+        // SI la celda destino está en una subruta y NO la tiene el hilo actual => intentar adquirir
+        if (entering != null && !entering.isHeldByCurrentThread()) {
+            try {
+                boolean got = entering.tryLock(5000); // timeout ajustable
+                if (!got) {
+                    // no conseguimos la subruta: esperamos un poco y salimos (reintentar luego)
+                    try { Thread.sleep(20); } catch (InterruptedException ignored) {}
+                    return;
+                }
+                // si la conseguimos, seguimos con la ocupación por celda
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+
+        // Guardar la subruta en la que estábamos (previa) para poder liberarla después si corresponde
+        int prevStreet = street;
+        int prevAvenue = avenue;
+        Subroute prevSubroute = tc.findContainingSubroute(prevStreet, prevAvenue);
+
+        // Intentar hacer el movimiento por celda (token por celda)
+        while (!tc.tryMove(prevStreet, prevAvenue, ns, na, id)) {
             try { Thread.sleep(2); } catch (InterruptedException ignored) {}
         }
+
         super.move();
+
+        // actualizar coordenadas locales
         street = ns;
         avenue = na;
+
+        // Si antes estábamos en una subruta y ahora ya NO estamos dentro de esa misma subruta => liberar
+        if (prevSubroute != null && !prevSubroute.contains(street, avenue)) {
+            prevSubroute.unlock();
+        }
     }
+
+
 
     // Sondeos de intersección conservando orientación
     private boolean clearLeft() {

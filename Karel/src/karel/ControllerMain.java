@@ -52,6 +52,28 @@ public class ControllerMain implements Directions
         }
         kareltherobot.World.asObject().setDelay(5);
 
+        // Bloqueo de la avenida 30
+        Subroute s1 = new Subroute("S1", true); // fair lock
+        for (int a = 10; a >= 5; a--) {
+            s1.addCell(a, 30); 
+        }
+        TrafficController.get().registerSubroute(s1);
+
+        //Bloqueo de la calle 1, 1 (derecha a izquierda)
+        Subroute s2 = new Subroute(world, false);
+        for (int a = 26; a <= 29; a++) {
+            s2.addCell(1, a);
+        }
+        TrafficController.get().registerSubroute(s2);
+
+        // Bloqueo de la calle 1, 2 (derecha a izquierda)
+        Subroute s3 = new Subroute(world, false);
+        for (int a = 16; a <= 21; a++) {
+            s3.addCell(1, a);
+        }
+        TrafficController.get().registerSubroute(s3);
+
+
         int totalAvenues = 7; // columnas
         int totalStreets = 4; // filas
         int count = totalAvenues * totalStreets; // 28 robots

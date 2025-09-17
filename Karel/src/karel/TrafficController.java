@@ -1,6 +1,8 @@
 package karel;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -13,6 +15,10 @@ public final class TrafficController {
 
     // key: (street,avenue) encoded in a long. value: robot id (for debugging)
     private final Map<Long, Long> occupied = new HashMap<>();
+
+    // subroutes
+    private final Map<String, Subroute> subroutes = new HashMap<>();
+    private final List<Subroute> subrouteList = new ArrayList<>();
 
     private TrafficController() {}
 
@@ -58,5 +64,19 @@ public final class TrafficController {
         if (owner != null && owner == robotId) {
             occupied.remove(k);
         }
+    }
+
+    // ===== Subroute management =====
+    public synchronized void registerSubroute(Subroute sr) {
+        subroutes.put(sr.getId(), sr);
+        subrouteList.add(sr);
+    }
+
+    // Busca subruta que tenga la celda (o null)
+    public synchronized Subroute findContainingSubroute(int street, int avenue) {
+        for (Subroute sr : subrouteList) {
+            if (sr.contains(street, avenue)) return sr;
+        }
+        return null;
     }
 }
