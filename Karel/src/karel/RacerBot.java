@@ -204,31 +204,32 @@ public class RacerBot extends Robot implements Runnable, Directions {
 
         TrafficController tc = TrafficController.get();
 
-        // Subruta que contiene la celda destino (si hay)
+        // Subruta destino y subruta actual (si estamos dentro de una)
         Subroute entering = tc.findContainingSubroute(ns, na);
+        Subroute currentSubroute = tc.findContainingSubroute(street, avenue);
 
-        // SI la celda destino está en una subruta y NO la tiene el hilo actual => intentar adquirir
-        if (entering != null && !entering.isHeldByCurrentThread()) {
+        // Entrando a una subruta nueva => batch tryEnter
+        if (entering != null && entering != currentSubroute) {
             try {
-                boolean got = entering.tryLock(5000); // timeout ajustable
+                Subroute.FlowDir fd = null;
+                if (dir == North) fd = Subroute.FlowDir.NORTH;
+                else if (dir == South) fd = Subroute.FlowDir.SOUTH;
+                else if (dir == East) fd = Subroute.FlowDir.EAST;
+                else if (dir == West) fd = Subroute.FlowDir.WEST;
+                boolean got = entering.tryEnterDirectional(fd, 5000);
                 if (!got) {
-                    // no conseguimos la subruta: esperamos un poco y salimos (reintentar luego)
-                    try { Thread.sleep(20); } catch (InterruptedException ignored) {}
+                    try { Thread.sleep(10); } catch (InterruptedException ignored) {}
                     return;
                 }
-                // si la conseguimos, seguimos con la ocupación por celda
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;
             }
         }
 
-        // Guardar la subruta en la que estábamos (previa) para poder liberarla después si corresponde
+        // Intentar hacer el movimiento por celda (token por celda)
         int prevStreet = street;
         int prevAvenue = avenue;
-        Subroute prevSubroute = tc.findContainingSubroute(prevStreet, prevAvenue);
-
-        // Intentar hacer el movimiento por celda (token por celda)
         while (!tc.tryMove(prevStreet, prevAvenue, ns, na, id)) {
             try { Thread.sleep(2); } catch (InterruptedException ignored) {}
         }
@@ -239,9 +240,9 @@ public class RacerBot extends Robot implements Runnable, Directions {
         street = ns;
         avenue = na;
 
-        // Si antes estábamos en una subruta y ahora ya NO estamos dentro de esa misma subruta => liberar
-        if (prevSubroute != null && !prevSubroute.contains(street, avenue)) {
-            prevSubroute.unlock();
+        // Si salimos de una subruta (estábamos en una y ya no la contiene la nueva celda) => exit()
+        if (currentSubroute != null && currentSubroute != entering && !currentSubroute.contains(street, avenue)) {
+            currentSubroute.exit();
         }
     }
 
