@@ -1,6 +1,8 @@
 KarelWorld
 streets 21
 avenues 31
+beepers 1 9 500
+beepers 11 23 500
 eastwestwalls 16 30 30
 eastwestwalls 16 29 29
 eastwestwalls 3 7 7
