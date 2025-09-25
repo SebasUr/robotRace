@@ -10,39 +10,36 @@ import java.util.concurrent.atomic.AtomicLong;
 import kareltherobot.*;
 
 /**
- * Robot de carrera con control de concurrencia por celda.
- * - Cada instancia corre en su propio hilo (Runnable)
- * - Antes de moverse, pide permiso al TrafficController para entrar a la celda destino
- * - Si varias rutas son posibles, elige aleatoriamente (preferencia: seguir recto)
+ * Robot autónomo que navega por rutas con control de tráfico:
+ * - Sigue ruta principal con posibles alternativas dinámicas
+ * - Control de acceso a subrutas restringidas
+ * - Sistema de intercambio de beepers entre zonas designadas
  */
 public class RacerBot extends Robot implements Runnable, Directions {
     private static final AtomicLong NEXT_ID = new AtomicLong(1);
-    // Latch para sincronizar el arranque de todos los hilos
     private static final CountDownLatch START_GATE = new CountDownLatch(1);
 
     private final long id;
     private final Random rnd = new Random();
 
-    // Estado local del robot (lo mantenemos para calcular la celda siguiente)
     private int street;
     private int avenue;
     private Directions.Direction dir;
 
-    // Condición hardcodeada para elegir alternativas en rutas
-    private final int condition = 0; // Cambiar a 1 para alternativa
+    private final int condition = 0;
     private int startIndex;
 
-    // Debe ser circular y terminar en una celda 
     private final List<int[]> routePositions = new ArrayList<>();
 
-    // campos para alternar rutas (global spec)
-    private List<int[]> activeAlternate = null; // ruta alternativa activa (si el robot tomó la alternativa)
-    private int alternateIndex = 0;              // índice en la ruta alternativa
+    private List<int[]> activeAlternate = null;
+    private int alternateIndex = 0;
     private boolean usingAlternate = false;
 
-    // rejoin: celda exacta donde se debe volver a la ruta principal (si -1 no hay rejoin guardado)
     private int rejoinStreet = -1;
     private int rejoinAvenue = -1;
+
+    private int cargoCount = 0;
+    private BeeperExchangeManager.Zone cargoFrom = null;
 
 
 
@@ -53,10 +50,7 @@ public class RacerBot extends Robot implements Runnable, Directions {
         this.avenue = avenue;
         this.dir = dir;
         this.id = NEXT_ID.getAndIncrement();
-        // Registrar ocupación inicial (asumimos posiciones de arranque únicas)
         TrafficController.get().occupy(street, avenue, id);
-
-        // Inicializar ruta por defecto (placeholder: usuario agrega movimientos)
         routePositions.add(new int[]{2,7});
         routePositions.add(new int[]{2,6});
         routePositions.add(new int[]{2,5});
@@ -144,7 +138,6 @@ public class RacerBot extends Robot implements Runnable, Directions {
             routePositions.add(new int[]{3, a});
         }
 
-        // Encontrar el índice de inicio basado en la posición inicial
         startIndex = 0;
         boolean onRoute = false;
         for (int i = 0; i < routePositions.size(); i++) {
@@ -154,7 +147,6 @@ public class RacerBot extends Robot implements Runnable, Directions {
                 break;
             }
         }
-        // Si no está en la ruta, startIndex = 0, y en run se moverá a la primera
     }
 
     // Utilidades de giro y actualización de dirección local
@@ -316,6 +308,12 @@ public class RacerBot extends Robot implements Runnable, Directions {
         // bucle principal: seguir la ruta de posiciones de manera circular
         int index = startIndex;
         while (true) {
+            // Terminar si el intercambio ya completó
+            if (BeeperExchangeManager.get().isDone()) {
+                try { Thread.sleep(5); } catch (InterruptedException ignored) {}
+                turnOff();
+                break;
+            }
             // elegir target según si estamos en alternativa o en la ruta principal
             int[] target;
             if (usingAlternate && activeAlternate != null && !activeAlternate.isEmpty()) {
@@ -328,6 +326,9 @@ public class RacerBot extends Robot implements Runnable, Directions {
 
             // mover al target (moveTo actualizará street/avenue)
             moveTo(target[0], target[1]);
+
+            // Lógica de intercambio de beepers al estar en una celda
+            maybeHandleBeeperExchange();
 
             // --- importante: ahora estamos en target; evaluar switch global ---
             // solo los robots que estén en la celda decisoria consultarán la spec (checkAndMaybeSwitchRoute hace eso)
@@ -376,6 +377,50 @@ public class RacerBot extends Robot implements Runnable, Directions {
             try { Thread.sleep(10); } catch (InterruptedException ignored) {}
         }
 
+    }
+
+    // Reglas de intercambio de beepers:
+    // - En el origen A(1,9) o B(11,23), si no llevo carga, reservo hasta 4 y pickeo hasta cubrir la reserva o quedarme sin beepers en el piso.
+    // - En el destino de esa carga, dejo todos y notifico; si dejé exactamente 4, espero 3s.
+    private void maybeHandleBeeperExchange() {
+        BeeperExchangeManager mgr = BeeperExchangeManager.get();
+        if (mgr.isDone()) return;
+
+        // Si no llevo nada: intentar cargar en origen si estoy parado allí
+        if (cargoCount == 0) {
+            BeeperExchangeManager.Zone z = mgr.originAt(street, avenue);
+            if (z != null) {
+                int reserve = mgr.reserve(z, 4);
+                if (reserve > 0) {
+                    int picked = 0;
+                    while (picked < reserve && nextToABeeper()) {
+                        pickBeeper();
+                        picked++;
+                    }
+                    if (picked > 0) {
+                        cargoFrom = z;
+                        cargoCount = picked;
+                    }
+                    if (picked < reserve) {
+                        mgr.refund(z, reserve - picked);
+                    }
+                }
+            }
+        }
+
+        // Si llevo algo y estoy en el destino correspondiente: descargar
+        if (cargoCount > 0 && cargoFrom != null && mgr.isDropPointFor(cargoFrom, street, avenue)) {
+            int delivered = cargoCount;
+            for (int i = 0; i < delivered; i++) {
+                putBeeper();
+            }
+            cargoCount = 0;
+            mgr.delivered(cargoFrom, delivered);
+            cargoFrom = null;
+            if (delivered == 4) {
+                try { Thread.sleep(500); } catch (InterruptedException ignored) {}
+            }
+        }
     }
 
     // Método estático para liberar a todos los robots a la vez

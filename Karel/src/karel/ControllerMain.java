@@ -6,10 +6,10 @@ import java.util.List;
 import kareltherobot.*;
 
 /**
- * Clase principal para iniciar la simulación de robots de carrera.
- * - Carga el mundo (pista de carreras) por defecto si no se especifica otro
- * - Crea múltiples instancias de RacerBot en una grilla (7x4) con colores únicos
- * - Cada robot corre en su propio hilo y sigue una ruta predefinida
+ * Controlador principal de la simulación:
+ * - Configura el mundo y sistemas de intercambio de beepers
+ * - Define subrutas restringidas y rutas alternativas
+ * - Crea y lanza múltiples robots con coordenadas iniciales específicas
  */
 public class ControllerMain implements Directions
 {
@@ -49,11 +49,16 @@ public class ControllerMain implements Directions
         kareltherobot.World.asObject().setDelay(0);
         kareltherobot.World.asObject().setVisible(true);
 
-        // Cargar por defecto la pista de carreras y crear varios robots
         if (world == null || world.equals("")) {
             kareltherobot.World.readWorld("race.kwld");
         }
         kareltherobot.World.asObject().setDelay(5);
+        BeeperExchangeManager.get().init(
+            1, 9, 500,
+            11, 23, 500,
+            13, 23,
+            2, 7
+        );
 
         // Bloqueo de la avenida 30
         Subroute s1 = new Subroute("S1", 4);
@@ -62,22 +67,17 @@ public class ControllerMain implements Directions
         }
         TrafficController.get().registerSubroute(s1);
         
-        //Bloqueo de la calle 1, 1 (derecha a izquierda)
         Subroute s2 = new Subroute("S2", 4);
         for (int a = 26; a <= 29; a++) {
             s2.addCell(1, a);
         }
-        for (int a = 16; a <= 21; a++) {
-            s2.addCell(1, a);
-        }
         TrafficController.get().registerSubroute(s2);
 
-        // Bloqueo de la calle 1, 2 (derecha a izquierda)
-        // Subroute s3 = new Subroute("S3", 4);
-        // for (int a = 16; a <= 21; a++) {
-        //     s3.addCell(1, a);
-        // }
-        // TrafficController.get().registerSubroute(s3);
+        Subroute s3 = new Subroute("S3", 4);
+        for (int a = 16; a <= 21; a++) {
+            s3.addCell(1, a);
+        }
+        TrafficController.get().registerSubroute(s3);
 
         // Subroute s4 = new Subroute("S4", 4);
         // for (int a = 5; a >= 2; a--) {
@@ -85,10 +85,7 @@ public class ControllerMain implements Directions
         // }
         // TrafficController.get().registerSubroute(s4);
 
-        // RUTA ALTERNA AZUL ----------------------------------------------------------
-        //  al llegar a 1,11, evaluar 1,12..1,15
         List<int[]> alt = new ArrayList<>();
-        // ruta alternativa (usa la tuya)
         for (int a = 2; a <= 11; a++) {
             alt.add(new int[]{a,11});
         }
@@ -134,20 +131,14 @@ public class ControllerMain implements Directions
         alt.add(new int[]{15,30});
 
 
-        // triggers: las cuatro celdas a comprobar (1,12..1,15)
         List<int[]> triggers = new ArrayList<>();
         triggers.add(new int[]{1,12});
         triggers.add(new int[]{1,13});
         triggers.add(new int[]{1,14});
         triggers.add(new int[]{1,15});
 
-        // requiredOccupied = 4 -> sólo cambiar si las 4 están ocupadas en el instante
         TrafficController.AlternateRouteSpec spec = new TrafficController.AlternateRouteSpec(alt, 15, 30, triggers, 4);
         TrafficController.get().registerAlternateRoute(1, 11, spec);
-        // FIN RUTA ALTERNATIVA VERDE. ----------------------------------------------------------------------------
-
-        // ----------------------------------------------------------------------------------------------------------------------------------|
-        // # RUTA ALTERNATIVA MORADA. ------------------------------------------------------------------------------|
         List<int[]> alt2 = new ArrayList<>();
         alt2.add(new int[]{11,22});
         alt2.add(new int[]{11,21});
@@ -187,25 +178,20 @@ public class ControllerMain implements Directions
         triggers2.add(new int[]{10,29});
 
 
-        // requiredOccupied = 4 -> sólo cambiar si las 4 están ocupadas en el instante
         TrafficController.AlternateRouteSpec spec2 = new TrafficController.AlternateRouteSpec(alt2,2, 10, triggers2, 6);
         TrafficController.get().registerAlternateRoute(11, 23, spec2);
-    // ----------------------------------------------------------------------------------------------------------------------
     
         int totalAvenues = 7; // columnas
         int totalStreets = 4; // filas
         int count = totalAvenues * totalStreets; // 28 robots
 
-        int robotNumber = 1;
+    int robotNumber = 1;
         for (int avenuex = 1; avenuex <= totalAvenues; avenuex++) {
             for (int streetx = 1; streetx <= totalStreets; streetx++) {
-                // Color único para cada robot
                 Color c = new Color((50 * robotNumber) % 256, (80 * robotNumber) % 256, (120 * robotNumber) % 256);
 
-                // Crear robot en (street, avenue)
-                RacerBot bot = new RacerBot(streetx, avenuex, Directions.East, Directions.infinity, c);
+                RacerBot bot = new RacerBot(streetx, avenuex, Directions.East, 0, c);
 
-                // Crear y lanzar el hilo
                 Thread t = new Thread(bot, "Racer-" + robotNumber);
                 t.start();
 
@@ -219,13 +205,12 @@ public class ControllerMain implements Directions
 
         for (int streetx : streetsLineaRoja) {
             for (int avenuex = startAvenue; avenuex <= endAvenue; avenuex++) {
-                // Color distinto para estos robots también
                 Color c = new Color((50 * robotNumber) % 256,
                                     (80 * robotNumber) % 256,
                                     (120 * robotNumber) % 256);
 
                 RacerBot bot = new RacerBot(streetx, avenuex, Directions.East,
-                                            Directions.infinity, c);
+                                            0, c);
 
                 Thread t = new Thread(bot, "Racer-" + robotNumber);
                 t.start();
@@ -234,10 +219,18 @@ public class ControllerMain implements Directions
             }
         }
 
-    // Pausa  para visualizar posiciones iniciales antes de arrancar
     try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
-    // Liberar la salida: todos los hilos comienzan a seguir su ruta
     RacerBot.releaseStartGate();
+
+    new Thread(() -> {
+        while (true) {
+            if (BeeperExchangeManager.get().isDone()) {
+                System.out.println("Intercambio de beepers completado. Saliendo...");
+                try { Thread.sleep(5000); } catch (InterruptedException ignored) {}
+            }
+            try { Thread.sleep(250); } catch (InterruptedException ignored) {}
+        }
+    }, "BeeperWatcher").start();
 
     //testing
         // count = 2;
