@@ -261,7 +261,6 @@ public class RacerBot extends Robot implements Runnable, Directions {
 
     private void moveTo(int ts, int ta) {
         while (street != ts || avenue != ta) {
-            // turn towards target
             Directions.Direction targetDir = null;
             if (street < ts) {
                 targetDir = North;

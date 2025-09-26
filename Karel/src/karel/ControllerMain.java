@@ -71,6 +71,7 @@ public class ControllerMain implements Directions
         for (int a = 26; a <= 29; a++) {
             s2.addCell(1, a);
         }
+        s2.addCell(2, 29);
         TrafficController.get().registerSubroute(s2);
 
         Subroute s3 = new Subroute("S3", 4);
