@@ -56,8 +56,8 @@ public class ControllerMain implements Directions
         BeeperExchangeManager.get().init(
             1, 9, 500,
             11, 23, 500,
-            13, 23,
-            2, 7
+            12, 23 ,
+            2, 2
         );
 
         // Bloqueo de la avenida 30
@@ -185,7 +185,7 @@ public class ControllerMain implements Directions
         int totalStreets = 4; // filas
         int count = totalAvenues * totalStreets; // 28 robots
 
-    int robotNumber = 1;
+        int robotNumber = 1;
         for (int avenuex = 1; avenuex <= totalAvenues; avenuex++) {
             for (int streetx = 1; streetx <= totalStreets; streetx++) {
                 Color c = new Color((50 * robotNumber) % 256, (80 * robotNumber) % 256, (120 * robotNumber) % 256);
@@ -217,6 +217,24 @@ public class ControllerMain implements Directions
 
                 robotNumber++;
             }
+        }
+
+        // Robots extra
+        direction = East;
+        int[][] extraRobots = {
+            {12, 28},
+            {12, 29},
+            {16, 29},
+            {16, 30}
+        };
+        for (int[] pos : extraRobots) {
+            Color c = new Color((50 * robotNumber) % 256,
+                                (80 * robotNumber) % 256,
+                                (120 * robotNumber) % 256);
+            RacerBot bot = new RacerBot(pos[0], pos[1], direction, 0, c);
+            Thread t = new Thread(bot, "Racer-" + robotNumber);
+            t.start();
+            robotNumber++;
         }
 
     try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
