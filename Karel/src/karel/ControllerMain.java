@@ -61,7 +61,7 @@ public class ControllerMain implements Directions
         );
 
         // Bloqueo de la avenida 30
-        Subroute s1 = new Subroute("S1", 4);
+        Subroute s1 = new Subroute("S1", 3);
         for (int a = 10; a >= 5; a--) {
             s1.addCell(a, 30); 
         }
@@ -219,7 +219,6 @@ public class ControllerMain implements Directions
             }
         }
 
-        // Robots extra
         direction = East;
         int[][] extraRobots = {
             {12, 28},
