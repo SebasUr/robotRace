@@ -15,38 +15,16 @@ public class ControllerMain implements Directions
 {
     public static void main(String[] args)
     {
-        UrRobot karel = null;
-        int street = 1;
-        int avenue = 1;
-        Direction direction = North;
-        int beepers = 0;
         String world = "";
-        int red = 0;
-        int green = 0;
-        int blue = 0;
-        Color color = null;
         try
         {
-            street = Integer.parseInt(args[0]);
-            avenue = Integer.parseInt(args[1]);
-            String which = args[2];
-            if(which.equalsIgnoreCase("South")) direction = South;
-            else if(which.equalsIgnoreCase("East")) direction = East;
-            else if(which.equalsIgnoreCase("West")) direction = West;
-            if(args[3].equalsIgnoreCase("infinity"))beepers = infinity;
-            else beepers = Integer.parseInt(args[3]);
             world = args[4];        
             if(world != null && world != "")kareltherobot.World.readWorld(world);
-            red = Integer.parseInt(args[5]);
-            green = Integer.parseInt(args[6]);
-            blue = Integer.parseInt(args[7]);
-            color = new Color(red, green, blue);
         }
         catch (Throwable e)
         {
             System.out.println("Using some default arguments");
         }
-        kareltherobot.World.asObject().setDelay(0);
         kareltherobot.World.asObject().setVisible(true);
 
         if (world == null || world.equals("")) {
@@ -184,7 +162,6 @@ public class ControllerMain implements Directions
     
         int totalAvenues = 7; // columnas
         int totalStreets = 4; // filas
-        int count = totalAvenues * totalStreets; // 28 robots
 
         int robotNumber = 1;
         for (int avenuex = 1; avenuex <= totalAvenues; avenuex++) {
@@ -220,7 +197,6 @@ public class ControllerMain implements Directions
             }
         }
 
-        direction = East;
         int[][] extraRobots = {
             {12, 28},
             {12, 29},
@@ -231,7 +207,7 @@ public class ControllerMain implements Directions
             Color c = new Color((50 * robotNumber) % 256,
                                 (80 * robotNumber) % 256,
                                 (120 * robotNumber) % 256);
-            RacerBot bot = new RacerBot(pos[0], pos[1], direction, 0, c);
+            RacerBot bot = new RacerBot(pos[0], pos[1], Directions.East, 0, c);
             Thread t = new Thread(bot, "Racer-" + robotNumber);
             t.start();
             robotNumber++;

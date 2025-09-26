@@ -20,7 +20,6 @@ public class RacerBot extends Robot implements Runnable, Directions {
     private static final CountDownLatch START_GATE = new CountDownLatch(1);
 
     private final long id;
-    private final Random rnd = new Random();
 
     private int street;
     private int avenue;
@@ -329,19 +328,8 @@ public class RacerBot extends Robot implements Runnable, Directions {
             // Lógica de intercambio de beepers al estar en una celda
             maybeHandleBeeperExchange();
 
-            // --- importante: ahora estamos en target; evaluar switch global ---
             // solo los robots que estén en la celda decisoria consultarán la spec (checkAndMaybeSwitchRoute hace eso)
             checkAndMaybeSwitchRoute();
-
-            // si estamos en alternativa, comprobar rejoin: si alcanzamos la celda de rejoin del spec,
-            // necesitamos volver a la ruta principal (buscar la celda en routePositions y continuar desde ahí).
-            if (usingAlternate && activeAlternate != null) {
-                // obtener la spec para esta alternativa (si fue activada desde spec, rejoin está en spec)
-                // pero la spec está en TrafficController, buscaremos el rejoin comprobando si la celda actual
-                // es igual a ANY rejoin de alguna spec. Para simplicidad consultamos todas las specs:
-                // (más eficiente sería almacenar rejoin en el robot al activar; aquí vamos a recuperarlo)
-                // -> mejor: cuando activamos guardamos rejoin en variables: ve abajo (modifica el activation para guardar)
-            }
 
             // AVANCE de índices
             if (usingAlternate && activeAlternate != null && !activeAlternate.isEmpty()) {
@@ -462,7 +450,7 @@ public class RacerBot extends Robot implements Runnable, Directions {
             this.rejoinStreet = spec.rejoinStreet;
             this.rejoinAvenue = spec.rejoinAvenue;
             System.out.println("Robot " + id + " switching to GLOBAL alternate route. rejoin=" 
-                               + rejoinStreet + "," + rejoinAvenue);
+                                + rejoinStreet + "," + rejoinAvenue);
         }
     }
 
