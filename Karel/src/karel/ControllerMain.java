@@ -49,14 +49,16 @@ public class ControllerMain implements Directions
         for (int a = 26; a <= 29; a++) {
             s2.addCell(1, a);
         }
-        s2.addCell(2, 29);
+        //s2.addCell(2, 29);
+
+       // Subroute s3 = new Subroute("S3", 4);
+        for (int a = 16; a <= 21; a++) {
+            s2.addCell(1, a);
+        }
+
         TrafficController.get().registerSubroute(s2);
 
-        Subroute s3 = new Subroute("S3", 4);
-        for (int a = 16; a <= 21; a++) {
-            s3.addCell(1, a);
-        }
-        TrafficController.get().registerSubroute(s3);
+       // TrafficController.get().registerSubroute(s3);
 
         // Subroute s4 = new Subroute("S4", 4);
         // for (int a = 5; a >= 2; a--) {
